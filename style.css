@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #fff;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial;
+}
+
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+select {
+  font-size: 28px;
+  padding-left: 0.5em;
+}
