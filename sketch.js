@@ -68,9 +68,17 @@ function setup() {
   // First option is a non-selectable label
   countSelect.option("How many groups?", "");
   countSelect.elt.querySelector('option[value=""]').disabled = true;
+  countSelect.option("Pairs", "pairs");
   for (let n = 2; n <= 18; n++) countSelect.option(String(n), n);
   countSelect.selected("");
   countSelect.changed(() => {
+    if (countSelect.value() === "pairs") {
+      pairsMode = true;
+      resetPairGroups();
+      return;
+    }
+
+    pairsMode = false;
     const selectedCount = int(countSelect.value());
     if (!Number.isNaN(selectedCount) && selectedCount > 0) {
       groupCount = selectedCount;
@@ -108,6 +116,12 @@ function draw() {
   background(18);
 
   drawTitleAndLabels();
+
+  if (pairsMode) {
+    if (pairAnimation.running) stepPairAnimation();
+    drawPairCircles();
+    return;
+  }
 
   // Update animation (add names over time)
   if (anim.running) stepAnimation();
@@ -170,6 +184,11 @@ function resetGroups() {
 
 function startGrouping() {
   userStartAudio();
+
+  if (pairsMode) {
+    startPairGrouping();
+    return;
+  }
 
   resetGroups();
 
