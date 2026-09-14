@@ -24,6 +24,17 @@ let anim = {
 
 let osc, env;
 
+function getRosterEntries() {
+  return Array.isArray(rosters) ? rosters.map((roster, index) => [index, roster]) : Object.entries(rosters || {});
+}
+
+function getSelectedRoster() {
+  const selectedKey = rosterSelect.value();
+  if (selectedKey === "" || selectedKey === null) return null;
+
+  return Array.isArray(rosters) ? rosters[int(selectedKey)] : rosters[selectedKey];
+}
+
 function setup() {
   createCanvas(1000, 1000);
 
@@ -39,7 +50,10 @@ function setup() {
   // First option is a non-selectable label
   rosterSelect.option("Choose a roster", "");
   rosterSelect.elt.querySelector('option[value=""]').disabled = true;
-  for (let i = 0; i < rosters.length; i++) rosterSelect.option(rosters[i].label, i);
+  getRosterEntries().forEach(([key, roster]) => {
+    const label = roster.label || key;
+    rosterSelect.option(label, key);
+  });
   rosterSelect.selected("");
   rosterSelect.changed(() => {
     const selectedRoster = rosterSelect.value();
@@ -119,9 +133,9 @@ function drawTitleAndLabels() {
   text(status, width / 2, 90);
 
   // show roster size
-  const rosterIdx = int(rosterSelect.value());
-  if (!isNaN(rosterIdx) && rosters[rosterIdx]) {
-    const n = getRosterNames(rosters[rosterIdx]).length;
+  const roster = getSelectedRoster();
+  if (roster) {
+    const n = getRosterNames(roster).length;
     textAlign(LEFT, CENTER);
     fill(200);
     text(`Names in roster: ${n}`, 70, 180);
@@ -159,14 +173,14 @@ function startGrouping() {
 
   resetGroups();
 
-  const rosterIdx = int(rosterSelect.value());
-  if (isNaN(rosterIdx) || !rosters[rosterIdx]) {
+  const roster = getSelectedRoster();
+  if (!roster) {
     playTick();
     anim.running = false;
     return;
   }
 
-  rosterNames = getRosterNames(rosters[rosterIdx]);
+  rosterNames = getRosterNames(roster);
 
   if (rosterNames.length === 0) {
     // Optional: tiny “no names” sound
@@ -232,7 +246,11 @@ function drawGroupCircles() {
     // Circle
     stroke(255, 60);
     strokeWeight(2);
-    fill(30);
+    if (groupCount >= 8) {
+      noFill();
+    } else {
+      fill(30);
+    }
     circle(x, y, circleR * 2);
 
     // Group number
