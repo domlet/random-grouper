@@ -121,11 +121,31 @@ function drawTitleAndLabels() {
   // show roster size
   const rosterIdx = int(rosterSelect.value());
   if (!isNaN(rosterIdx) && rosters[rosterIdx]) {
-    const n = rosters[rosterIdx].names.filter((x) => String(x).trim().length > 0).length;
+    const n = getRosterNames(rosters[rosterIdx]).length;
     textAlign(LEFT, CENTER);
     fill(200);
     text(`Names in roster: ${n}`, 70, 180);
   }
+}
+
+function getRosterNames(roster) {
+  if (Array.isArray(roster.names)) {
+    return roster.names
+      .filter((name) => String(name).trim().length > 0)
+      .map((name) => String(name));
+  }
+
+  if (Array.isArray(roster.tables)) {
+    return roster.tables.flatMap((table) => {
+      const tableId = Object.keys(table)[0];
+      const names = Array.isArray(table[tableId]) ? table[tableId] : [];
+      return names
+        .filter((name) => String(name).trim().length > 0)
+        .map((name) => String(name));
+    });
+  }
+
+  return [];
 }
 
 function resetGroups() {
@@ -150,8 +170,7 @@ function startGrouping() {
     return;
   }
 
-  rosterNames = rosters[rosterIdx].names.slice(); // copy
-  rosterNames = rosterNames.filter((n) => String(n).trim().length > 0); // remove blanks
+  rosterNames = getRosterNames(rosters[rosterIdx]);
 
   if (rosterNames.length === 0) {
     // Optional: tiny “no names” sound
