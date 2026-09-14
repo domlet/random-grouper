@@ -130,18 +130,14 @@ function drawTitleAndLabels() {
 
 function getRosterNames(roster) {
   if (Array.isArray(roster.names)) {
-    return roster.names
-      .filter((name) => String(name).trim().length > 0)
-      .map((name) => String(name));
+    return roster.names.filter((name) => String(name).trim().length > 0).map((name) => String(name));
   }
 
   if (Array.isArray(roster.tables)) {
     return roster.tables.flatMap((table) => {
       const tableId = Object.keys(table)[0];
       const names = Array.isArray(table[tableId]) ? table[tableId] : [];
-      return names
-        .filter((name) => String(name).trim().length > 0)
-        .map((name) => String(name));
+      return names.filter((name) => String(name).trim().length > 0).map((name) => String(name));
     });
   }
 
