@@ -1,18 +1,24 @@
 # random-grouper
 
+Generate random groups from a list of people (or anything).
+
 ## What did I build?
 
 [**random-grouper**](https://domlet.github.io/random-grouper) is a simple web app that plays noisy sounds while it generates small groups (any number) by randomly selecting names from a specified roster. 
 
-It displays numbered tables (represented as circles), and students can watch an animation as the app randomly places individual student names at each table. The animation lasts about 5 seconds, and many students experience excitement while it runs.
+| Grouping function | Pairing function |
+| --- | --- |
+| ![animated demonstration of grouping functionality](/assets/demo-groups.gif "Text to show on mouseover") | ![animated demonstration of pairing functionality](/assets/demo-pairs.gif "Text to show on mouseover") |
+| Puts students into random groups. | Puts students into random pairs.  |
+
+
+It displays numbered tables (represented as circles), and students can watch an animation as the app randomly places individual student names at each table. The animation lasts about 5 seconds, and many students experience excitement while it runs. When it finishes, students inevitably cry out with delight or dismay – and half the students beg for a re-run.
 
 Anyone can [download and use it](https://domlet.github.io/random-grouper) with their own groups (without publishing PII such as student names on the Internet.) 
 
 ## What problem am I solving?
 
-In my experience, it is not uncommon for students to dislike being placed in random groups. 
-
-And yet, it is beneficial for students to learn and practice collaboration skills that work with unfamiliar people. 
+In my experience, it is not uncommon for students to dislike being placed in random groups. Yet, it is beneficial for students to learn and practice collaboration skills that work with unfamiliar people. 
 
 As teachers, we are doing our job well when we can push students into their [zone of proximal development (ZPD)](https://en.wikipedia.org/wiki/Zone_of_proximal_development) where they are slightly uncomfortable.
 
@@ -26,7 +32,7 @@ In the worst case scenario, the app also offers an easy way to regenerate groupi
 
 ## How can people use it?
 
-Anyone can [download and use the app](https://domlet.github.io/random-grouper) with their own groups (without publishing PII such as student names on the Internet.) 
+Anyone can [download the source code](https://domlet.github.io/random-grouper) and use the app locally with their own groups (without publishing PII such as student names on the Internet.) 
 
 ### Follow these steps:
 
@@ -35,6 +41,38 @@ Anyone can [download and use the app](https://domlet.github.io/random-grouper) w
 3. Update the rosters (use your own lists).
 4. Run the app.
 5. If you love it, [subscribe to my blog.](https://domlet.github.io/)
+
+#### How to format your rosters.js
+
+```
+let rosters = {
+  // Each roster is shaped like this:
+  "AP Computer Science - 3rd": {
+    // To prevent table neighbors from being paired...
+    // Rosters have students listed by current table:
+    tables: [
+      {
+        1: [
+          "Rafidah E",
+          "Earnest P",
+          "Mae L",
+          "Victorino C",
+        ],
+      },
+      {
+        2: [
+          "Nguyen H",
+          // Use commenting to omit an absent 
+          // student ↓ from grouping and pairing:
+          // "Eulalio T", 
+          "Zülfiye Y",
+          "Şuayip Y",
+        ],
+      },
+    ],
+  },
+};
+```
 
 ### Video tutorial:
 
