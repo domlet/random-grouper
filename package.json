@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "prettier-plugin-multiline-arrays": "^4.1.11"
+  },
+  "scripts": {
+    "format:rosters": "prettier --plugin=prettier-plugin-multiline-arrays --multiline-arrays-wrap-threshold=0 --multiline-arrays-line-pattern=1 --write rosters.js"
+  }
+}
