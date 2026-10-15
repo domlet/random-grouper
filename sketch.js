@@ -209,6 +209,7 @@ function startGrouping() {
   }
 
   assignOrder = shuffle(rosterNames.slice());
+  applySeatingRestrictions(assignOrder);
 
   anim.running = true;
   anim.startMs = millis();
@@ -219,6 +220,24 @@ function startGrouping() {
   anim.intervalMs = anim.durationMs / assignOrder.length;
 
   playStartWhoosh();
+}
+
+// Zero-based group indexes for tables 3 and 9
+const restrictedGroupIndexes = [2, 8];
+
+function isPrefSeating(name) {
+  return prefSeating.includes(name);
+}
+
+// Swaps preferred-seating students out of restricted groups (round-robin slots)
+function applySeatingRestrictions(order) {
+  const isRestricted = (i) => restrictedGroupIndexes.includes(i % groupCount);
+  for (let i = 0; i < order.length; i++) {
+    if (!isRestricted(i) || !isPrefSeating(order[i])) continue;
+    const j = order.findIndex((name, k) => !isRestricted(k) && !isPrefSeating(name));
+    if (j === -1) continue;
+    [order[i], order[j]] = [order[j], order[i]];
+  }
 }
 
 function stepAnimation() {
