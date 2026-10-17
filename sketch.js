@@ -7,13 +7,19 @@
    - sound: start whoosh, tick per name, success chime
 */
 
-let rosterSelect, countSelect, makeBtn;
+let rosterSelect, countSelect, makeBtn, prefsCheckbox;
+let nameColors = new Map();
+let pendingColors = new Map();
+let prefsApplied = false;
+let legendDiv;
+const statusColors = { met: "lime", wildcard: "#56B4E9", unmet: "red" };
 // rosters array is now loaded from rosters.js
 let rosterNames = [];
 let groupCount = 6;
 
 let groups = []; // array of arrays of names
 let assignOrder = []; // shuffled roster list of 32
+let assignmentGroupIndexes = [];
 let anim = {
   running: false,
   startMs: 0,
@@ -86,8 +92,15 @@ function setup() {
     }
   });
 
+  prefsCheckbox = createCheckbox("Apply preferences", false);
+  prefsCheckbox.position(70, uiY + 60 * 2 - 4);
+  prefsCheckbox.style("font-family", "sans-serif");
+  prefsCheckbox.style("font-size", "22px");
+  prefsCheckbox.style("color", "#fff");
+  loadResponses();
+
   makeBtn = createButton("Make groups");
-  makeBtn.position(70, uiY + 60 * 2);
+  makeBtn.position(70, uiY + 60 * 2 + 36);
   makeBtn.size(290, 46);
   makeBtn.style("font-family", "Ibarra Real Nova");
   makeBtn.style("font-size", "30px");
@@ -95,6 +108,7 @@ function setup() {
   makeBtn.style("border-radius", "10px");
   makeBtn.style("background-color", "#4CAF50");
   makeBtn.mousePressed(startGrouping);
+  createPrefsLegend(70, uiY + 60 * 2 + 36 + 46 + 12);
 
   // ----- Sound (generated) -----
   osc = new p5.Oscillator("triangle");
@@ -128,6 +142,32 @@ function draw() {
 
   // Draw group circles
   drawGroupCircles();
+  legendDiv.style("display", prefsApplied ? "flex" : "none");
+}
+
+function createPrefsLegend(x, y) {
+  legendDiv = createDiv();
+  // Placed at the caller's x/y (same x as the inputs) so it sits under "Make groups"
+  legendDiv.position(x, y);
+  // Starts hidden: it is only relevant after a run with "Apply preferences" checked.
+  // draw() flips it to "flex" when prefsApplied is true and back to "none" after a reset or a run without preferences
+  legendDiv.style("display", "none");
+  // Stacks the entries vertically, one line per preference outcome
+  legendDiv.style("flex-direction", "column");
+  legendDiv.style("gap", "6px");
+  legendDiv.style("font-family", "sans-serif");
+  legendDiv.style("font-size", "24px");
+  // Neutral label color; each dot below is colored with the same value used for names
+  // in statusColors (lime = met, blue = all nopref/no ignore data, red = not met)
+  legendDiv.style("color", "#c8c8c8");
+  [
+    ["lime", "preference met"],
+    ["#56B4E9", "no prefs"],
+    ["red", "not met"],
+    ["white", "no submission"],
+  ].forEach(([col, label]) => {
+    legendDiv.child(createSpan(`<span style="color:${col}">●</span> ${label}`));
+  });
 }
 
 function drawTitleAndLabels() {
@@ -175,11 +215,15 @@ function getRosterNames(roster) {
 function resetGroups() {
   // Clear group buckets
   groups = [];
+  nameColors = new Map();
+  pendingColors = new Map();
+  prefsApplied = false;
   for (let i = 0; i < groupCount; i++) groups.push([]);
 
   // Stop animation if it was running
   anim.running = false;
   anim.nextIndex = 0;
+  assignmentGroupIndexes = [];
 }
 
 function startGrouping() {
@@ -209,7 +253,31 @@ function startGrouping() {
   }
 
   assignOrder = shuffle(rosterNames.slice());
+  assignmentGroupIndexes = getGroupAssignmentIndexes(
+    assignOrder.length,
+    groupCount,
+  );
   applySeatingRestrictions(assignOrder);
+  nameColors = new Map();
+  pendingColors = new Map();
+  prefsApplied = false;
+
+  // Always runs so mxbBlocklist and prefSeating are enforced; with no prefs it only resolves those conflicts
+  optimizeOrder(assignOrder, groupCount, new Map(), restrictedGroupIndexes);
+
+  if (prefsCheckbox.checked()) {
+    if (!responsesRows) {
+      console.warn(responsesError || "responses.csv is still loading; grouping without preferences.");
+    } else {
+      const prefs = buildPreferences(rosterSelect.value(), rosterNames);
+      const restricted = restrictedGroupIndexes;
+      optimizeOrder(assignOrder, groupCount, prefs, restricted);
+      const statuses = evaluateStatuses(assignOrder, groupCount, prefs);
+      statuses.forEach(({ status }, name) => pendingColors.set(name, statusColors[status]));
+      prefsApplied = true;
+      printPreferenceReport(statuses);
+    }
+  }
 
   anim.running = true;
   anim.startMs = millis();
@@ -231,7 +299,9 @@ function isPrefSeating(name) {
 
 // Swaps preferred-seating students out of restricted groups (round-robin slots)
 function applySeatingRestrictions(order) {
-  const isRestricted = (i) => restrictedGroupIndexes.includes(i % groupCount);
+  const assignments = getGroupAssignmentIndexes(order.length, groupCount);
+  const isRestricted = (i) =>
+    restrictedGroupIndexes.includes(assignments[i]);
   for (let i = 0; i < order.length; i++) {
     if (!isRestricted(i) || !isPrefSeating(order[i])) continue;
     const j = order.findIndex((name, k) => !isRestricted(k) && !isPrefSeating(name));
@@ -253,7 +323,7 @@ function stepAnimation() {
     const name = assignOrder[anim.nextIndex];
 
     // Round-robin distribution across groupCount
-    const g = anim.nextIndex % groupCount;
+    const g = assignmentGroupIndexes[anim.nextIndex];
     groups[g].push(name);
 
     playTick();
@@ -262,6 +332,7 @@ function stepAnimation() {
 
   if (progress >= 1 && anim.nextIndex >= assignOrder.length) {
     anim.running = false;
+    nameColors = pendingColors;
     playSuccessChime();
   }
 }
@@ -312,12 +383,12 @@ function drawNamesInCircle(x, y, r, names) {
 
   textAlign(CENTER, TOP);
   textSize(30);
-  fill(235);
 
   const startY = y - r + paddingTop + 20;
 
   for (let i = 0; i < shown.length; i++) {
     const yy = startY + i * lineH;
+    fill(nameColors.get(shown[i]) || 235);
     text(shown[i], x, yy);
   }
 

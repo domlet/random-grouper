@@ -14,6 +14,8 @@ Generate random groups from a list of people (or anything).
 
 It displays numbered tables (represented as circles), and students can watch an animation as the app randomly places individual student names at each table. The animation lasts about 5 seconds, and many students experience excitement while it runs. When it finishes, students inevitably cry out with delight or dismay – and half the students beg for a re-run.
 
+In regular grouping mode, table 3 is limited to two students; additional students are distributed among the other tables.
+
 Anyone can [download and use it](https://domlet.github.io/random-grouper) with their own groups (without publishing PII such as student names on the Internet.) 
 
 ## What problem am I solving?

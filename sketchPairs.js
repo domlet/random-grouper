@@ -62,7 +62,21 @@ function startPairGrouping() {
   playStartWhoosh();
 }
 
+// Retries the random pairing until no blocklisted students share a pair or a circle
 function createPairLabels(students) {
+  let labels = [];
+  for (let attempt = 0; attempt < 500; attempt++) {
+    labels = buildPairLabels(students);
+    if (labels.length === 0) return labels;
+    const circles = distributePairLabels(labels);
+    const conflict = circles.some((circle) => countBlockedPairs(circle.flat()) > 0);
+    if (!conflict) return labels;
+  }
+  console.warn("Could not satisfy mxbBlocklist for all pairs; some blocked students may share a table.");
+  return labels;
+}
+
+function buildPairLabels(students) {
   const sources = [
     ...new Set(
       students
